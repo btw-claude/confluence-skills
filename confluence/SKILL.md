@@ -25,7 +25,7 @@ This skill is organized into granular operation files:
 The following environment variables must be configured:
 
 ```
-CONFLUENCE_BASE_URL=https://your-domain.atlassian.net
+CONFLUENCE_URL=https://your-domain.atlassian.net/wiki
 CONFLUENCE_EMAIL=your-email@example.com
 CONFLUENCE_API_TOKEN=your-api-token
 ```
@@ -43,13 +43,13 @@ The first file found is used. Create an API token at: https://id.atlassian.com/m
 
 ```bash
 # Confluence API Configuration
-CONFLUENCE_BASE_URL=https://your-domain.atlassian.net
+CONFLUENCE_URL=https://your-domain.atlassian.net/wiki
 CONFLUENCE_EMAIL=your-email@example.com
 CONFLUENCE_API_TOKEN=your-api-token
 ```
 
 ## API Reference
 
-All operations use the Confluence REST API v2: `{CONFLUENCE_BASE_URL}/wiki/api/v2`
+All operations use the Confluence REST API v2 at `{CONFLUENCE_URL}/api/v2`.
 
 For detailed API documentation, see: https://developer.atlassian.com/cloud/confluence/rest/v2/intro/

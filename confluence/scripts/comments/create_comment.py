@@ -35,17 +35,30 @@ def main():
 
     page_id = data["page_id"]
 
-    # Build request payload
+    # Build request payload for v1 API
     payload = {
+        "type": "comment",
+        "container": {
+            "id": page_id,
+            "type": "page"
+        },
         "body": {
-            "representation": "storage",
-            "value": data["body"]
+            "storage": {
+                "representation": "storage",
+                "value": data["body"]
+            }
         }
     }
 
     try:
         client = ConfluenceClient()
-        result = client.post(f"pages/{page_id}/footer-comments", payload)
+
+        # v2 API does not support creating comments
+        # result = client.post(f"pages/{page_id}/footer-comments", payload)
+
+        # Use v1 API for creating comments
+        result = client.post_v1("content", payload)
+
         print(json.dumps(result, indent=2))
     except Exception as e:
         print(f"Error: API request failed: {e}", file=sys.stderr)

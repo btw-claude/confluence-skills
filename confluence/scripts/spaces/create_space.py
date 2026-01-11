@@ -73,7 +73,14 @@ def main():
 
     try:
         client = ConfluenceClient()
-        result = client.post("spaces", payload)
+
+        # v2 API requires RBAC to be enabled on the Confluence site
+        # See: https://community.developer.atlassian.com/t/confluence-rest-api-v2-space-page-services/69065
+        # result = client.post("spaces", payload)
+
+        # Use v1 API for space creation (works without RBAC)
+        result = client.post_v1("space", payload)
+
         print(json.dumps(result, indent=2))
     except Exception as e:
         print(f"Error: API request failed: {e}", file=sys.stderr)

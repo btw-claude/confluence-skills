@@ -43,14 +43,16 @@ def load_env() -> dict[str, str]:
 
 
 class ConfluenceClient:
-    """Confluence REST API v2 client.
+    """Confluence REST API client.
 
-    Provides methods for interacting with the Confluence REST API v2.
+    Provides methods for interacting with the Confluence REST API.
+    Supports both v2 API (default) and v1 API (for operations not available in v2).
     Authentication is handled via HTTP Basic Auth using email and API token.
 
     Attributes:
-        base_url: The base Confluence URL (e.g., https://your-domain.atlassian.net)
-        api_url: The full API URL ({base_url}/wiki/api/v2)
+        base_url: The Confluence base URL (CONFLUENCE_URL)
+        api_url: The v2 API URL ({CONFLUENCE_URL}/api/v2)
+        api_url_v1: The v1 API URL ({CONFLUENCE_URL}/rest/api)
         auth: HTTPBasicAuth object for request authentication
         headers: Default headers for API requests
     """
@@ -64,20 +66,21 @@ class ConfluenceClient:
             Exits with status 1 if required environment variables are missing.
         """
         env = load_env()
-        self.base_url = env.get("CONFLUENCE_BASE_URL", "").rstrip("/")
+        self.base_url = env.get("CONFLUENCE_URL", "").rstrip("/")
         self.email = env.get("CONFLUENCE_EMAIL", "")
         self.token = env.get("CONFLUENCE_API_TOKEN", "")
 
         if not all([self.base_url, self.email, self.token]):
-            print("Error: Missing required env vars (CONFLUENCE_BASE_URL, CONFLUENCE_EMAIL, CONFLUENCE_API_TOKEN)", file=sys.stderr)
+            print("Error: Missing required env vars (CONFLUENCE_URL, CONFLUENCE_EMAIL, CONFLUENCE_API_TOKEN)", file=sys.stderr)
             sys.exit(1)
 
-        self.api_url = f"{self.base_url}/wiki/api/v2"
+        self.api_url = f"{self.base_url}/api/v2"
+        self.api_url_v1 = f"{self.base_url}/rest/api"
         self.auth = HTTPBasicAuth(self.email, self.token)
         self.headers = {"Content-Type": "application/json"}
 
     def get(self, endpoint: str, params: Optional[dict] = None) -> dict:
-        """Send a GET request to the Confluence API.
+        """Send a GET request to the Confluence v2 API.
 
         Args:
             endpoint: API endpoint path (without base URL).
@@ -98,8 +101,32 @@ class ConfluenceClient:
         resp.raise_for_status()
         return resp.json()
 
+    def get_v1(self, endpoint: str, params: Optional[dict] = None) -> dict:
+        """Send a GET request to the Confluence v1 API.
+
+        Some operations (like search) require the v1 API.
+
+        Args:
+            endpoint: API endpoint path (without base URL).
+            params: Optional query parameters.
+
+        Returns:
+            dict: JSON response from the API.
+
+        Raises:
+            requests.HTTPError: If the request fails.
+        """
+        resp = requests.get(
+            f"{self.api_url_v1}/{endpoint}",
+            auth=self.auth,
+            headers=self.headers,
+            params=params
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     def post(self, endpoint: str, data: dict) -> dict:
-        """Send a POST request to the Confluence API.
+        """Send a POST request to the Confluence v2 API.
 
         Args:
             endpoint: API endpoint path (without base URL).
@@ -113,6 +140,31 @@ class ConfluenceClient:
         """
         resp = requests.post(
             f"{self.api_url}/{endpoint}",
+            auth=self.auth,
+            headers=self.headers,
+            json=data
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def post_v1(self, endpoint: str, data: dict) -> dict:
+        """Send a POST request to the Confluence v1 API.
+
+        Some operations (like space creation) require the v1 API
+        when RBAC is not enabled on the Confluence site.
+
+        Args:
+            endpoint: API endpoint path (without base URL).
+            data: JSON data to send in the request body.
+
+        Returns:
+            dict: JSON response from the API.
+
+        Raises:
+            requests.HTTPError: If the request fails.
+        """
+        resp = requests.post(
+            f"{self.api_url_v1}/{endpoint}",
             auth=self.auth,
             headers=self.headers,
             json=data
@@ -143,7 +195,7 @@ class ConfluenceClient:
         return resp.json()
 
     def delete(self, endpoint: str, params: Optional[dict] = None) -> bool:
-        """Send a DELETE request to the Confluence API.
+        """Send a DELETE request to the Confluence v2 API.
 
         Args:
             endpoint: API endpoint path (without base URL).
@@ -163,3 +215,27 @@ class ConfluenceClient:
         )
         resp.raise_for_status()
         return resp.status_code in (200, 204)
+
+    def delete_v1(self, endpoint: str, params: Optional[dict] = None) -> bool:
+        """Send a DELETE request to the Confluence v1 API.
+
+        Some operations (like space deletion) require the v1 API.
+
+        Args:
+            endpoint: API endpoint path (without base URL).
+            params: Optional query parameters.
+
+        Returns:
+            bool: True if deletion was successful (status 200, 202, or 204).
+
+        Raises:
+            requests.HTTPError: If the request fails.
+        """
+        resp = requests.delete(
+            f"{self.api_url_v1}/{endpoint}",
+            auth=self.auth,
+            headers=self.headers,
+            params=params
+        )
+        resp.raise_for_status()
+        return resp.status_code in (200, 202, 204)

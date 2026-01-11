@@ -45,7 +45,13 @@ def main():
 
     try:
         client = ConfluenceClient()
-        result = client.get("content/search", params)
+
+        # v2 API search endpoint doesn't work the same way
+        # result = client.get("content/search", params)
+
+        # Use v1 API for search
+        result = client.get_v1("content/search", params)
+
         print(json.dumps(result, indent=2))
     except Exception as e:
         print(f"Error: API request failed: {e}", file=sys.stderr)

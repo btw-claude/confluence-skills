@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for f in scripts/*/*.py)",
+      "Bash(do python3 -m py_compile \"$f\")",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(python scripts/spaces/create_space.py:*)",
+      "Bash(python:*)"
+    ]
+  }
+}
