@@ -47,6 +47,12 @@ CONFLUENCE_PAT=your-personal-access-token
 
 For Confluence Cloud, create a PAT at: https://id.atlassian.com/manage-profile/security/api-tokens
 
+> **Note**: For Confluence Cloud, Personal Access Tokens and API Tokens are managed from the same location. The distinction is in how you use them:
+> - **PAT (Bearer Token)**: Used directly in the `Authorization: Bearer <token>` header
+> - **API Token (Basic Auth)**: Used with your email in Basic authentication (`email:token` base64-encoded)
+>
+> Both token types are created from the Atlassian API tokens page.
+
 For Confluence Data Center/Server, navigate to your profile settings and select "Personal Access Tokens".
 
 ### Option 2: Basic Authentication (Email + API Token)
@@ -103,6 +109,41 @@ When multiple authentication methods are configured:
 1. **CONFLUENCE_PAT** is checked first - if set, Bearer token authentication is used
 2. **CONFLUENCE_EMAIL + CONFLUENCE_API_TOKEN** are used as fallback for Basic authentication
 3. If neither method is configured, an error is displayed with setup instructions
+
+## Security Best Practices
+
+### Token Management
+
+Follow these best practices to keep your authentication tokens secure:
+
+#### Token Security
+
+- **Never commit tokens to version control** - Always use environment files (`.claude/env`) and ensure they are listed in `.gitignore`
+- **Use environment variables** - Avoid hardcoding tokens in scripts or configuration files
+- **Limit token scope** - When possible, create tokens with the minimum required permissions for your use case
+- **Use separate tokens** - Create different tokens for different environments (development, staging, production)
+
+#### Token Rotation
+
+- **Regular rotation** - Rotate your tokens periodically (recommended: every 90 days)
+- **Immediate rotation** - Rotate tokens immediately if:
+  - A token may have been exposed or compromised
+  - An employee with token access leaves the organization
+  - You suspect unauthorized access to your systems
+- **Document rotation procedures** - Maintain runbooks for token rotation to minimize downtime
+
+#### Token Storage
+
+- **Use secure storage** - Store tokens in secure credential management systems when possible
+- **Environment file permissions** - Restrict read access to `.claude/env` files (`chmod 600 .claude/env`)
+- **Avoid logging** - Never log tokens or include them in error messages
+- **Clear clipboard** - After copying tokens, clear your clipboard to prevent accidental exposure
+
+#### Monitoring and Auditing
+
+- **Monitor token usage** - Review Atlassian admin logs for unusual API activity
+- **Set up alerts** - Configure alerts for failed authentication attempts
+- **Regular audits** - Periodically review which tokens exist and revoke unused ones
 
 ## API Reference
 
