@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """Confluence API client with environment-based configuration."""
 
+import logging
 import os
 import sys
 from pathlib import Path
 from typing import Optional
 import requests
 from requests.auth import HTTPBasicAuth
+
+# Configure module logger
+logger = logging.getLogger(__name__)
 
 
 def load_env() -> dict[str, str]:
@@ -83,24 +87,27 @@ class ConfluenceClient:
             sys.exit(1)
 
         # Check for PAT authentication (takes precedence)
-        self.pat = env.get("CONFLUENCE_PAT", "")
+        # Use local variables to avoid storing credentials as instance attributes
+        pat = env.get("CONFLUENCE_PAT", "")
 
         # Check for Basic Auth credentials
-        self.email = env.get("CONFLUENCE_EMAIL", "")
-        self.token = env.get("CONFLUENCE_API_TOKEN", "")
+        email = env.get("CONFLUENCE_EMAIL", "")
+        token = env.get("CONFLUENCE_API_TOKEN", "")
 
         # Set up authentication based on available credentials
         self.headers = {"Content-Type": "application/json"}
 
-        if self.pat:
+        if pat:
             # Use PAT authentication (Bearer token)
             self.auth_type = "pat"
             self.auth = None
-            self.headers["Authorization"] = f"Bearer {self.pat}"
-        elif self.email and self.token:
+            self.headers["Authorization"] = f"Bearer {pat}"
+            logger.debug("Confluence client initialized with PAT authentication")
+        elif email and token:
             # Use Basic authentication
             self.auth_type = "basic"
-            self.auth = HTTPBasicAuth(self.email, self.token)
+            self.auth = HTTPBasicAuth(email, token)
+            logger.debug("Confluence client initialized with Basic authentication")
         else:
             print(
                 "Error: No authentication configured. Please set either:\n"
@@ -112,6 +119,12 @@ class ConfluenceClient:
 
         self.api_url = f"{self.base_url}/api/v2"
         self.api_url_v1 = f"{self.base_url}/rest/api"
+
+        logger.debug(
+            "Confluence client configured: base_url=%s, auth_type=%s",
+            self.base_url,
+            self.auth_type
+        )
 
     def get(self, endpoint: str, params: Optional[dict] = None) -> dict:
         """Send a GET request to the Confluence v2 API.
