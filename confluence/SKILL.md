@@ -47,11 +47,11 @@ CONFLUENCE_PAT=your-personal-access-token
 
 For Confluence Cloud, create a PAT at: https://id.atlassian.com/manage-profile/security/api-tokens
 
-> **Note**: For Confluence Cloud, Personal Access Tokens and API Tokens are managed from the same location. The distinction is in how you use them:
+> **Note for Confluence Cloud Users**: For Confluence Cloud, the same Atlassian account URL is used for both API tokens and Personal Access Tokens. Tokens created at this URL can be used with either authentication method. The distinction is in how you authenticate, not in the token type itself:
 > - **PAT (Bearer Token)**: Used directly in the `Authorization: Bearer <token>` header
 > - **API Token (Basic Auth)**: Used with your email in Basic authentication (`email:token` base64-encoded)
 >
-> Both token types are created from the Atlassian API tokens page.
+> The choice between PAT and API token authentication is about your authentication method preference and organizational requirements, not about different token types. Both options use tokens generated from the same Atlassian API tokens page.
 
 For Confluence Data Center/Server, navigate to your profile settings and select "Personal Access Tokens".
 
