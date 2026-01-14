@@ -47,37 +47,71 @@ class ConfluenceClient:
 
     Provides methods for interacting with the Confluence REST API.
     Supports both v2 API (default) and v1 API (for operations not available in v2).
-    Authentication is handled via HTTP Basic Auth using email and API token.
+    Authentication is handled via either:
+    - Personal Access Token (PAT) using Bearer token authentication
+    - HTTP Basic Auth using email and API token
+
+    PAT authentication takes precedence if both methods are configured.
 
     Attributes:
         base_url: The Confluence base URL (CONFLUENCE_URL)
         api_url: The v2 API URL ({CONFLUENCE_URL}/api/v2)
         api_url_v1: The v1 API URL ({CONFLUENCE_URL}/rest/api)
-        auth: HTTPBasicAuth object for request authentication
-        headers: Default headers for API requests
+        auth: HTTPBasicAuth object for request authentication (None if using PAT)
+        headers: Default headers for API requests (includes Authorization for PAT)
+        auth_type: The authentication type being used ('pat' or 'basic')
     """
 
     def __init__(self):
         """Initialize the Confluence client with environment configuration.
 
         Loads configuration from environment files and sets up authentication.
+        Supports two authentication methods:
+        - PAT (Personal Access Token): Set CONFLUENCE_PAT for Bearer token auth
+        - Basic Auth: Set CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN
+
+        PAT takes precedence if both authentication methods are configured.
 
         Exits:
             Exits with status 1 if required environment variables are missing.
         """
         env = load_env()
         self.base_url = env.get("CONFLUENCE_URL", "").rstrip("/")
+
+        if not self.base_url:
+            print("Error: Missing required env var CONFLUENCE_URL", file=sys.stderr)
+            sys.exit(1)
+
+        # Check for PAT authentication (takes precedence)
+        self.pat = env.get("CONFLUENCE_PAT", "")
+
+        # Check for Basic Auth credentials
         self.email = env.get("CONFLUENCE_EMAIL", "")
         self.token = env.get("CONFLUENCE_API_TOKEN", "")
 
-        if not all([self.base_url, self.email, self.token]):
-            print("Error: Missing required env vars (CONFLUENCE_URL, CONFLUENCE_EMAIL, CONFLUENCE_API_TOKEN)", file=sys.stderr)
+        # Set up authentication based on available credentials
+        self.headers = {"Content-Type": "application/json"}
+
+        if self.pat:
+            # Use PAT authentication (Bearer token)
+            self.auth_type = "pat"
+            self.auth = None
+            self.headers["Authorization"] = f"Bearer {self.pat}"
+        elif self.email and self.token:
+            # Use Basic authentication
+            self.auth_type = "basic"
+            self.auth = HTTPBasicAuth(self.email, self.token)
+        else:
+            print(
+                "Error: No authentication configured. Please set either:\n"
+                "  - CONFLUENCE_PAT for Personal Access Token authentication, or\n"
+                "  - CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN for Basic authentication",
+                file=sys.stderr
+            )
             sys.exit(1)
 
         self.api_url = f"{self.base_url}/api/v2"
         self.api_url_v1 = f"{self.base_url}/rest/api"
-        self.auth = HTTPBasicAuth(self.email, self.token)
-        self.headers = {"Content-Type": "application/json"}
 
     def get(self, endpoint: str, params: Optional[dict] = None) -> dict:
         """Send a GET request to the Confluence v2 API.
