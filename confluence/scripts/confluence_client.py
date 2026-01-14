@@ -42,6 +42,11 @@ def load_env() -> dict[str, str]:
     sys.exit(1)
 
 
+class AuthenticationError(Exception):
+    """Raised when authentication with Confluence fails."""
+    pass
+
+
 class ConfluenceClient:
     """Confluence REST API client.
 
@@ -62,7 +67,7 @@ class ConfluenceClient:
         auth_type: The authentication type being used ('pat' or 'basic')
     """
 
-    def __init__(self):
+    def __init__(self, validate_auth: bool = True):
         """Initialize the Confluence client with environment configuration.
 
         Loads configuration from environment files and sets up authentication.
@@ -71,6 +76,15 @@ class ConfluenceClient:
         - Basic Auth: Set CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN
 
         PAT takes precedence if both authentication methods are configured.
+
+        Args:
+            validate_auth: If True (default), validates authentication credentials
+                by making a lightweight API call during initialization. Set to False
+                to skip validation for improved performance when credentials are
+                known to be valid.
+
+        Raises:
+            AuthenticationError: If validate_auth is True and authentication fails.
 
         Exits:
             Exits with status 1 if required environment variables are missing.
@@ -112,6 +126,69 @@ class ConfluenceClient:
 
         self.api_url = f"{self.base_url}/api/v2"
         self.api_url_v1 = f"{self.base_url}/rest/api"
+
+        # Validate authentication if requested
+        if validate_auth:
+            self._validate_authentication()
+
+    def _validate_authentication(self) -> None:
+        """Validate authentication credentials by making a lightweight API call.
+
+        Makes a minimal API request to verify that the configured credentials
+        are valid and working. Uses the space endpoint with limit=1 for minimal
+        overhead.
+
+        Raises:
+            AuthenticationError: If authentication fails with clear guidance
+                on how to resolve the issue.
+        """
+        try:
+            resp = requests.get(
+                f"{self.api_url_v1}/space",
+                auth=self.auth,
+                headers=self.headers,
+                params={"limit": 1}
+            )
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                if self.auth_type == "pat":
+                    raise AuthenticationError(
+                        "Authentication failed: Invalid or expired Personal Access Token.\n"
+                        "Please verify your CONFLUENCE_PAT is correct and has not expired.\n"
+                        "You can generate a new token at: "
+                        "Settings > Personal Access Tokens in Confluence."
+                    ) from e
+                else:
+                    raise AuthenticationError(
+                        "Authentication failed: Invalid email or API token.\n"
+                        "Please verify:\n"
+                        "  - CONFLUENCE_EMAIL is your Atlassian account email\n"
+                        "  - CONFLUENCE_API_TOKEN is a valid API token\n"
+                        "You can generate a new token at: "
+                        "https://id.atlassian.com/manage-profile/security/api-tokens"
+                    ) from e
+            elif e.response.status_code == 403:
+                raise AuthenticationError(
+                    "Authentication failed: Access forbidden.\n"
+                    "Your credentials are valid but you don't have permission to access "
+                    "Confluence.\nPlease contact your Confluence administrator."
+                ) from e
+            else:
+                raise AuthenticationError(
+                    f"Authentication validation failed with status {e.response.status_code}.\n"
+                    f"Please verify your Confluence URL and credentials.\n"
+                    f"Error: {e.response.text}"
+                ) from e
+        except requests.exceptions.ConnectionError as e:
+            raise AuthenticationError(
+                f"Could not connect to Confluence at {self.base_url}.\n"
+                "Please verify CONFLUENCE_URL is correct and the server is reachable."
+            ) from e
+        except requests.exceptions.RequestException as e:
+            raise AuthenticationError(
+                f"Authentication validation failed: {str(e)}"
+            ) from e
 
     def get(self, endpoint: str, params: Optional[dict] = None) -> dict:
         """Send a GET request to the Confluence v2 API.
