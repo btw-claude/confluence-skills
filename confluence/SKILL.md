@@ -125,7 +125,7 @@ Follow these best practices to keep your authentication tokens secure:
 
 #### Token Rotation
 
-- **Regular rotation** - Rotate your tokens periodically (recommended: every 90 days, aligned with [NIST SP 800-63B](https://pages.nist.gov/800-63-3/sp800-63b.html) guidelines for credential management)
+- **Regular rotation** - Rotate your tokens periodically (recommended: every 90 days, aligned with [NIST SP 800-63B Section 5: Authenticator and Verifier Requirements](https://pages.nist.gov/800-63-3/sp800-63b.html#sec5) guidelines for credential management)
 - **Immediate rotation** - Rotate tokens immediately if:
   - A token may have been exposed or compromised
   - An employee with token access leaves the organization
