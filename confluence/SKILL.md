@@ -120,12 +120,12 @@ Follow these best practices to keep your authentication tokens secure:
 
 - **Never commit tokens to version control** - Always use environment files (`.claude/env`) and ensure they are listed in `.gitignore`
 - **Use environment variables** - Avoid hardcoding tokens in scripts or configuration files
-- **Limit token scope** - When possible, create tokens with the minimum required permissions for your use case
+- **Limit token scope** - When possible, create tokens with the minimum required permissions for your use case. See [Atlassian's API token documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) for details on token permissions and scopes
 - **Use separate tokens** - Create different tokens for different environments (development, staging, production)
 
 #### Token Rotation
 
-- **Regular rotation** - Rotate your tokens periodically (recommended: every 90 days)
+- **Regular rotation** - Rotate your tokens periodically (recommended: every 90 days, aligned with [NIST SP 800-63B](https://pages.nist.gov/800-63-3/sp800-63b.html) guidelines for credential management)
 - **Immediate rotation** - Rotate tokens immediately if:
   - A token may have been exposed or compromised
   - An employee with token access leaves the organization
