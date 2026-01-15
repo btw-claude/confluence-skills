@@ -142,7 +142,7 @@ class ConfluenceClient:
         if timeout_str:
             try:
                 self.timeout = float(timeout_str)
-                logger.info("Using configured timeout: %g seconds", self.timeout)
+                logger.info("Using configured timeout: %.2f seconds", self.timeout)
             except ValueError:
                 logger.warning(
                     "Invalid CONFLUENCE_TIMEOUT value '%s', using default %d seconds",
