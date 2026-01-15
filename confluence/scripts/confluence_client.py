@@ -50,6 +50,10 @@ class AuthenticationError(Exception):
     """Raised when authentication with Confluence fails."""
 
 
+# Default timeout in seconds for HTTP requests
+DEFAULT_TIMEOUT = 10
+
+
 class ConfluenceClient:
     """Confluence REST API client.
 
@@ -68,6 +72,7 @@ class ConfluenceClient:
         auth: HTTPBasicAuth object for request authentication (None if using PAT)
         headers: Default headers for API requests (includes Authorization for PAT)
         auth_type: The authentication type being used ('pat' or 'basic')
+        timeout: HTTP request timeout in seconds (configurable via CONFLUENCE_TIMEOUT)
     """
 
     def __init__(self, validate_auth: bool = True):
@@ -132,10 +137,27 @@ class ConfluenceClient:
         self.api_url = f"{self.base_url}/api/v2"
         self.api_url_v1 = f"{self.base_url}/rest/api"
 
+        # Configure timeout from environment or use default
+        timeout_str = env.get("CONFLUENCE_TIMEOUT", "")
+        if timeout_str:
+            try:
+                self.timeout = int(timeout_str)
+                logger.debug("Using configured timeout: %d seconds", self.timeout)
+            except ValueError:
+                logger.warning(
+                    "Invalid CONFLUENCE_TIMEOUT value '%s', using default %d seconds",
+                    timeout_str,
+                    DEFAULT_TIMEOUT
+                )
+                self.timeout = DEFAULT_TIMEOUT
+        else:
+            self.timeout = DEFAULT_TIMEOUT
+
         logger.debug(
-            "Confluence client configured: base_url=%s, auth_type=%s",
+            "Confluence client configured: base_url=%s, auth_type=%s, timeout=%d",
             self.base_url,
-            self.auth_type
+            self.auth_type,
+            self.timeout
         )
 
         # Validate authentication if requested
@@ -159,7 +181,7 @@ class ConfluenceClient:
                 auth=self.auth,
                 headers=self.headers,
                 params={"limit": 1},
-                timeout=10
+                timeout=self.timeout
             )
             resp.raise_for_status()
         except requests.exceptions.HTTPError as e:
@@ -224,7 +246,8 @@ class ConfluenceClient:
             f"{self.api_url}/{endpoint}",
             auth=self.auth,
             headers=self.headers,
-            params=params
+            params=params,
+            timeout=self.timeout
         )
         resp.raise_for_status()
         return resp.json()
@@ -248,7 +271,8 @@ class ConfluenceClient:
             f"{self.api_url_v1}/{endpoint}",
             auth=self.auth,
             headers=self.headers,
-            params=params
+            params=params,
+            timeout=self.timeout
         )
         resp.raise_for_status()
         return resp.json()
@@ -270,7 +294,8 @@ class ConfluenceClient:
             f"{self.api_url}/{endpoint}",
             auth=self.auth,
             headers=self.headers,
-            json=data
+            json=data,
+            timeout=self.timeout
         )
         resp.raise_for_status()
         return resp.json()
@@ -295,7 +320,8 @@ class ConfluenceClient:
             f"{self.api_url_v1}/{endpoint}",
             auth=self.auth,
             headers=self.headers,
-            json=data
+            json=data,
+            timeout=self.timeout
         )
         resp.raise_for_status()
         return resp.json()
@@ -317,7 +343,8 @@ class ConfluenceClient:
             f"{self.api_url}/{endpoint}",
             auth=self.auth,
             headers=self.headers,
-            json=data
+            json=data,
+            timeout=self.timeout
         )
         resp.raise_for_status()
         return resp.json()
@@ -339,7 +366,8 @@ class ConfluenceClient:
             f"{self.api_url}/{endpoint}",
             auth=self.auth,
             headers=self.headers,
-            params=params
+            params=params,
+            timeout=self.timeout
         )
         resp.raise_for_status()
         return resp.status_code in (200, 204)
@@ -363,7 +391,8 @@ class ConfluenceClient:
             f"{self.api_url_v1}/{endpoint}",
             auth=self.auth,
             headers=self.headers,
-            params=params
+            params=params,
+            timeout=self.timeout
         )
         resp.raise_for_status()
         return resp.status_code in (200, 202, 204)
