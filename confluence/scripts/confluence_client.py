@@ -154,7 +154,7 @@ class ConfluenceClient:
             self.timeout = DEFAULT_TIMEOUT
 
         logger.debug(
-            "Confluence client configured: base_url=%s, auth_type=%s, timeout=%.2f",
+            "Confluence client configured: base_url=%s, auth_type=%s, timeout=%g",
             self.base_url,
             self.auth_type,
             self.timeout
