@@ -48,7 +48,6 @@ def load_env() -> dict[str, str]:
 
 class AuthenticationError(Exception):
     """Raised when authentication with Confluence fails."""
-    pass
 
 
 class ConfluenceClient:
@@ -160,7 +159,8 @@ class ConfluenceClient:
                 f"{self.api_url_v1}/space",
                 auth=self.auth,
                 headers=self.headers,
-                params={"limit": 1}
+                params={"limit": 1},
+                timeout=10
             )
             resp.raise_for_status()
         except requests.exceptions.HTTPError as e:
@@ -193,6 +193,11 @@ class ConfluenceClient:
                     f"Please verify your Confluence URL and credentials.\n"
                     f"Error: {e.response.text}"
                 ) from e
+        except requests.exceptions.Timeout as e:
+            raise AuthenticationError(
+                f"Connection to Confluence at {self.base_url} timed out.\n"
+                "The server may be slow or unresponsive. Please try again later."
+            ) from e
         except requests.exceptions.ConnectionError as e:
             raise AuthenticationError(
                 f"Could not connect to Confluence at {self.base_url}.\n"
