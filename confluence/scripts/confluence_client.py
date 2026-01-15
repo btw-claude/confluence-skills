@@ -42,7 +42,7 @@ def load_env() -> dict[str, str]:
                         env_vars[key.strip()] = value.strip().strip('"\'')
             return env_vars
 
-    print("Error: No env file found at .claude/env or ~/.claude/env", file=sys.stderr)
+    logger.error("No env file found at .claude/env or ~/.claude/env")
     sys.exit(1)
 
 
@@ -96,7 +96,7 @@ class ConfluenceClient:
         self.base_url = env.get("CONFLUENCE_URL", "").rstrip("/")
 
         if not self.base_url:
-            print("Error: Missing required env var CONFLUENCE_URL", file=sys.stderr)
+            logger.error("Missing required env var CONFLUENCE_URL")
             sys.exit(1)
 
         # Check for PAT authentication (takes precedence)
@@ -122,11 +122,10 @@ class ConfluenceClient:
             self.auth = HTTPBasicAuth(email, token)
             logger.debug("Confluence client initialized with Basic authentication")
         else:
-            print(
-                "Error: No authentication configured. Please set either:\n"
+            logger.error(
+                "No authentication configured. Please set either:\n"
                 "  - CONFLUENCE_PAT for Personal Access Token authentication, or\n"
-                "  - CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN for Basic authentication",
-                file=sys.stderr
+                "  - CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN for Basic authentication"
             )
             sys.exit(1)
 
